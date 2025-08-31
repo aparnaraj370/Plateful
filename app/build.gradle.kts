@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.project.resqfood"
+    namespace = "com.example.plateful"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.project.resqfood"
+        applicationId = "com.example.plateful"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

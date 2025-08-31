@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ResQFood"
+rootProject.name = "Plateful"
 include(":app")
