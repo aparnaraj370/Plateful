@@ -330,10 +330,10 @@ fun MainScreen(
                                 @Suppress("WrongTimberUsage")
 
                                 Timber.d("View Map")
-                                val context = LocalContext.current
-                                selectedItemIndex = 0
-                                val intent = Intent(context, MapScreen::class.java)
-                                context.startActivity(intent)
+//                                val context = LocalContext.current
+//                                selectedItemIndex = 0
+//                                val intent = Intent(context, MapScreen::class.java)
+//                                context.startActivity(intent)
                             }
                         }
                     }
