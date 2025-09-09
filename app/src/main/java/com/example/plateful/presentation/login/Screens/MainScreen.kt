@@ -12,20 +12,23 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoStories
@@ -33,6 +36,8 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.rounded.ShoppingCart
@@ -50,6 +55,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -76,6 +82,7 @@ import com.example.plateful.presentation.itemdetailscreen.NavItemDetailScreen
 import com.example.plateful.presentation.login.BottomNavigation.BottomNavigationItem
 import com.example.plateful.presentation.profilescreens.ProfileScreen
 import com.example.plateful.presentation.profilescreens.TopAppBarProfileScreen
+import com.example.plateful.presentation.searchFilter.NavSearchScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import androidx.compose.material3.Switch
@@ -305,22 +312,48 @@ fun MainScreen(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(paddingValues),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                        .padding(paddingValues)
                                 ) {
+                                    // Enhanced Search and Filter Section
+                                    SearchAndFilterSection(
+                                        onSearchClick = { navController.navigate(NavSearchScreen) },
+                                        onFilterClick = { navController.navigate(NavSearchScreen) }
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    
+                                    // Quick Filters
+                                    QuickFiltersRow()
+                                    
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    
                                     // --- CATEGORY CHIP ROW UI ---
                                     CategoryChipRow(
                                         categories = topOffersViewModel.categories,
                                         selected = topOffersViewModel.selectedCategories,
                                         onChipClick = { topOffersViewModel.onCategoryChipClick(it) }
                                     )
+                                    
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    CardsSection(offers = topOffersViewModel.filteredOffers)
-                                    Button(modifier = Modifier.padding(top = 16.dp), onClick = {
-                                        navController.navigate(NavItemDetailScreen)
-                                    }) {
-                                        Text(text = "View Item Details")
-                                    }
+                                    
+                                    CardsSection(
+                                        offers = topOffersViewModel.filteredOffers,
+                                        onClick = { card ->
+                                            navController.navigate(
+                                                NavItemDetailScreen(
+                                                    itemName = card.Menu,
+                                                    restaurantName = card.RestroName,
+                                                    originalPrice = card.price,
+                                                    discountedPrice = card.discountedPrice,
+                                                    rating = card.rating,
+                                                    distance = card.distance,
+                                                    location = card.location,
+                                                    pickupTime = card.pickupTime,
+                                                    isVegan = card.isVegan
+                                                )
+                                            )
+                                        }
+                                    )
                                 }
                             }
                             1 -> {
@@ -374,6 +407,140 @@ fun CategoryChipRow(
         }
     }
 }
+
+@Composable
+fun SearchAndFilterSection(
+    onSearchClick: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Search Bar
+        OutlinedTextField(
+            value = "",
+            onValueChange = { },
+            placeholder = { 
+                Text(
+                    text = "Search for food, restaurants...",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onSearchClick() },
+            enabled = false, // Make it clickable but not editable here
+            shape = RoundedCornerShape(24.dp),
+            colors = androidx.compose.material3.TextFieldDefaults.colors(
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledIndicatorColor = Color.Transparent
+            )
+        )
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        // Filter Button
+        Surface(
+            modifier = Modifier
+                .size(56.dp)
+                .clickable { onFilterClick() },
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            shadowElevation = 2.dp
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = "Filter",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickFiltersRow() {
+    Column {
+        Text(
+            text = "Quick Filters",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        
+        LazyRow(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(quickFilters) { filter ->
+                QuickFilterChip(
+                    text = filter.text,
+                    icon = filter.icon,
+                    onClick = { /* Handle quick filter click */ }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickFilterChip(
+    text: String,
+    icon: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = icon,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+data class QuickFilter(
+    val text: String,
+    val icon: String
+)
+
+val quickFilters = listOf(
+    QuickFilter("Near Me", "📍"),
+    QuickFilter("Under ₹100", "💰"),
+    QuickFilter("Fast Pickup", "⚡"),
+    QuickFilter("Vegan", "🌱"),
+    QuickFilter("Desserts", "🍰"),
+    QuickFilter("Indian", "🍛")
+)
 
 @Preview
 @Composable

@@ -52,11 +52,32 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-object NavOrderConfirmScreen
+data class NavOrderConfirmScreen(
+    val itemName: String,
+    val restaurantName: String,
+    val originalPrice: Float,
+    val discountedPrice: Float,
+    val rating: Float,
+    val distance: Float,
+    val location: String,
+    val pickupTime: String,
+    val isVegan: Boolean,
+    val quantity: Int
+)
 
 @Composable
 fun OrderConfirmScreen( 
     navController: NavController,
+    itemName: String,
+    restaurantName: String,
+    originalPrice: Float,
+    discountedPrice: Float,
+    rating: Float,
+    distance: Float,
+    location: String,
+    pickupTime: String,
+    isVegan: Boolean,
+    quantity: Int,
     orderViewModel: OrderViewModel = viewModel()
 ) {
     val localContext = LocalContext.current
@@ -133,7 +154,7 @@ fun OrderConfirmScreen(
                         ){
                             IconButton(
                                 onClick = {
-                                    navController.navigate(NavItemDetailScreen)
+                                    navController.popBackStack()
                                 }
                             ) {
                                 Icon(
@@ -151,16 +172,42 @@ fun OrderConfirmScreen(
 
 
                         Spacer(modifier = Modifier.height(30.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        // Item and Restaurant Info
+                        Column {
                             Text(
-                                text = "Dumpling House",
+                                text = itemName,
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.width(20.dp))
-                            Text(text = "$5 for 1 item")
+                            Text(
+                                text = restaurantName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row {
+                                Text(
+                                    text = "₹${discountedPrice.toInt()} × $quantity = ",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "₹${(discountedPrice * quantity).toInt()}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = "Pickup: $pickupTime",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Location: $location",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         Spacer(modifier = Modifier.height(30.dp))
                         Row(
@@ -186,16 +233,17 @@ fun OrderConfirmScreen(
                         Button(
                             onClick = {
                                 if (currentUserId.isNotEmpty()) {
-                                    // TODO: Replace hardcoded values with actual data passed from previous screens
+                                    val totalPrice = discountedPrice * quantity
+                                    val description = "${if (isVegan) "Vegan " else ""}$itemName from $restaurantName"
                                     orderViewModel.createOrder(
                                         userId = currentUserId,
-                                        restaurantId = "restaurant_001", // TODO: Pass from previous screen
-                                        restaurantName = "Dumpling House",
-                                        itemName = "Special Dumplings", // TODO: Pass from previous screen
-                                        itemDescription = "Delicious leftover dumplings", // TODO: Pass from previous screen
-                                        price = "$5",
-                                        pickupTime = "3 PM - 5 PM", // TODO: Pass from previous screen
-                                        restaurantAddress = "123 Main St, Cityville" // TODO: Pass from previous screen
+                                        restaurantId = restaurantName.replace(" ", "_").lowercase(),
+                                        restaurantName = restaurantName,
+                                        itemName = itemName,
+                                        itemDescription = description,
+                                        price = "₹${totalPrice.toInt()}",
+                                        pickupTime = pickupTime,
+                                        restaurantAddress = location
                                     )
                                 } else {
                                     Toast.makeText(localContext, "Please log in to place order", Toast.LENGTH_SHORT).show()

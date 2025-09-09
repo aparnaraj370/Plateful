@@ -117,7 +117,7 @@ fun FilterSortBottomSheetUI(
                 Button(
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        viewModel.hideSheet()
+                        viewModel.applyFilters()
                     }
                 ) {
                     Text("Apply")

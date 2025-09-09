@@ -61,6 +61,8 @@ import com.example.plateful.presentation.login.mainlogin.OTPVerificationUI
 import com.example.plateful.presentation.login.mainlogin.SignInUI
 import com.example.plateful.presentation.onboardingProcess.NavOnboarding
 import com.example.plateful.presentation.onboardingProcess.Onboarding
+import com.example.plateful.presentation.welcome.NavWelcomeScreen
+import com.example.plateful.presentation.welcome.WelcomeScreen
 import com.example.plateful.presentation.orders.NavOrdersScreen
 import com.example.plateful.presentation.orders.OrdersScreen
 import com.example.plateful.presentation.postScreen.NavPostScreen
@@ -128,8 +130,15 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination =
                     if (alreadyLoggedIn)
-                        NavMainScreen  else NavOnboarding
+                        NavMainScreen  else NavWelcomeScreen
                 ) {
+                    composable<NavWelcomeScreen>(
+                        enterTransition = {
+                            slideHorizontallyAnimation()
+                        },
+                    ) {
+                        WelcomeScreen(navController = navController)
+                    }
                     composable<NavSignInUI>(
                         enterTransition = {
                             slideHorizontallyAnimation()
@@ -143,7 +152,7 @@ class MainActivity : ComponentActivity() {
                         },
                     ){
                         val filterViewModel : FilterSearchViewModel = viewModel()
-                        SearchScreen(filterViewModel)
+                        SearchScreen(filterViewModel, navController)
                     }
                     composable<NavOTPVerificationUI>(
                         enterTransition = {
@@ -198,11 +207,36 @@ class MainActivity : ComponentActivity() {
                     composable<NavWaitScreen> {
                         WaitScreen(navController)
                     }
-                    composable<NavItemDetailScreen> {
-                        ItemDetailScreen(navController)
+                    composable<NavItemDetailScreen> { backStackEntry ->
+                        val args = backStackEntry.toRoute<NavItemDetailScreen>()
+                        ItemDetailScreen(
+                            navController = navController,
+                            itemName = args.itemName,
+                            restaurantName = args.restaurantName,
+                            originalPrice = args.originalPrice,
+                            discountedPrice = args.discountedPrice,
+                            rating = args.rating,
+                            distance = args.distance,
+                            location = args.location,
+                            pickupTime = args.pickupTime,
+                            isVegan = args.isVegan
+                        )
                     }
-                    composable<NavOrderConfirmScreen> {
-                        OrderConfirmScreen(navController)
+                    composable<NavOrderConfirmScreen> { backStackEntry ->
+                        val args = backStackEntry.toRoute<NavOrderConfirmScreen>()
+                        OrderConfirmScreen(
+                            navController = navController,
+                            itemName = args.itemName,
+                            restaurantName = args.restaurantName,
+                            originalPrice = args.originalPrice,
+                            discountedPrice = args.discountedPrice,
+                            rating = args.rating,
+                            distance = args.distance,
+                            location = args.location,
+                            pickupTime = args.pickupTime,
+                            isVegan = args.isVegan,
+                            quantity = args.quantity
+                        )
                     }
                     composable<NavAddingLeftovers> {
                         AddingLeftovers(navController)

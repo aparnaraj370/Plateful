@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -50,6 +52,8 @@ import com.example.plateful.ui.theme.primaryContainerLight
 import com.example.plateful.ui.theme.primaryLight
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import com.example.plateful.presentation.login.Screens.TopOffers
+import com.example.plateful.presentation.itemdetailscreen.NavItemDetailScreen
 
 @Serializable
 object NavSearchScreen
@@ -57,13 +61,16 @@ object NavSearchScreen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    viewModel: FilterSearchViewModel
+    viewModel: FilterSearchViewModel,
+    navController: androidx.navigation.NavController
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
     var isSheetVisible by viewModel.isSheetVisible
 
     val activeTab by viewModel.activeTab.collectAsState()
+    val filteredResults by viewModel.filteredResults.collectAsState()
+    val hasAppliedFilters by viewModel.hasAppliedFilters.collectAsState()
 
     if (isSheetVisible) {
         FilterSortBottomSheetUI(
@@ -112,12 +119,21 @@ fun SearchScreen(
             )
         }
 
-        SearchSuggestions(
-            recentSearches = viewModel.recentSearches.take(3),
-            fallbackSuggestions = viewModel.fallbackSuggestions.take(3),
-            onSearchClicked = viewModel::onSearchQuerySubmit,
-            viewModel = viewModel
-        )
+        // Show filtered results if filters are applied, otherwise show search suggestions
+        if (hasAppliedFilters) {
+            FilteredResultsSection(
+                results = filteredResults,
+                onClearFilters = viewModel::clearFilters,
+                navController = navController
+            )
+        } else {
+            SearchSuggestions(
+                recentSearches = viewModel.recentSearches.take(3),
+                fallbackSuggestions = viewModel.fallbackSuggestions.take(3),
+                onSearchClicked = viewModel::onSearchQuerySubmit,
+                viewModel = viewModel
+            )
+        }
     }
 }
 
@@ -274,5 +290,91 @@ fun ResetIcon(
                 .size(iconSize),
             tint = tint
         )
+    }
+}
+
+@Composable
+fun FilteredResultsSection(
+    results: List<com.example.plateful.presentation.login.Screens.Card>,
+    onClearFilters: () -> Unit,
+    navController: androidx.navigation.NavController
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header with results count and clear button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "${results.size} results found",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Text(
+                text = "Clear Filters",
+                color = primaryLight,
+                modifier = Modifier.clickable { onClearFilters() },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        if (results.isEmpty()) {
+            // Empty state
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "No items match your filters",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = "Try adjusting your filter criteria",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        } else {
+            // Results list
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(results) { card ->
+                    TopOffers(
+                        card = card,
+                        onClick = { clickedCard ->
+                            navController.navigate(
+                                NavItemDetailScreen(
+                                    itemName = clickedCard.Menu,
+                                    restaurantName = clickedCard.RestroName,
+                                    originalPrice = clickedCard.price,
+                                    discountedPrice = clickedCard.discountedPrice,
+                                    rating = clickedCard.rating,
+                                    distance = clickedCard.distance,
+                                    location = clickedCard.location,
+                                    pickupTime = clickedCard.pickupTime,
+                                    isVegan = clickedCard.isVegan
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+        }
     }
 }
