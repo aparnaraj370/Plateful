@@ -76,6 +76,9 @@ import com.example.plateful.presentation.searchFilter.FilterSortBottomSheetUI
 import com.example.plateful.presentation.searchFilter.FilterSearchViewModel
 import com.example.plateful.presentation.searchFilter.NavSearchScreen
 import com.example.plateful.presentation.searchFilter.SearchScreen
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
+import android.util.Log
 
 
 class MainActivity : ComponentActivity() {
@@ -97,6 +100,15 @@ class MainActivity : ComponentActivity() {
 
 
         val auth = FirebaseAuth.getInstance()
+        // Test Firebase connection
+        Firebase.firestore.clearPersistence().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("Firebase", "✅ Connected successfully to your Firebase project: plateful-abin")
+            } else {
+                Log.e("Firebase", "❌ Connection failed: ${task.exception?.message}")
+            }
+        }
+
         val accountService: AccountService = AccountServiceImpl()
         val alreadyLoggedIn = FirebaseAuth.getInstance().currentUser != null
         val restaurantListingViewModel: ListingViewModel = ListingViewModelFactory().create(ListingViewModel::class.java)

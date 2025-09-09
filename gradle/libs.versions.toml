@@ -51,6 +51,7 @@ playservices-maps = "19.0.0"
 timber = "5.0.1"
 
 [libraries]
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 accompanist-pager = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accompanistPager" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }

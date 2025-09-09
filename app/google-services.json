@@ -1,44 +1,26 @@
 {
   "project_info": {
-    "project_number": "726557887682",
-    "project_id": "resqfood-d03bf",
-    "storage_bucket": "resqfood-d03bf.appspot.com"
+    "project_number": "161973331481",
+    "project_id": "plateful-abin",
+    "storage_bucket": "plateful-abin.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:726557887682:android:04d689b3a5e866cb3fbf5b",
+        "mobilesdk_app_id": "1:161973331481:android:bdff77b636d070ed85ec88",
         "android_client_info": {
           "package_name": "com.example.plateful"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "726557887682-aighprn26o01ldk79mnrk1gc7vhdre8p.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.plateful",
-            "certificate_hash": "16d24ef8045efb244e8c5c9e6b5aea59f108343e"
-          }
-        },
-        {
-          "client_id": "726557887682-ol2lmm1t0ce4p20l0gc010bhomqcrs7t.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC5L8nH62IsZS75wCbPkdcMw050D1ZYVEA"
+          "current_key": "AIzaSyAC5cl3ZpEO4gNjlylbhn6MKaYsvk1jxfU"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "726557887682-ol2lmm1t0ce4p20l0gc010bhomqcrs7t.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
