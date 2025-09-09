@@ -20,11 +20,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,10 +39,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.navOptions
+import com.google.firebase.auth.FirebaseAuth
 import com.example.plateful.R
 import com.example.plateful.presentation.login.Screens.NavMainScreen
+import com.example.plateful.presentation.orders.OrderCreationState
+import com.example.plateful.presentation.orders.OrderViewModel
 import com.example.plateful.ui.theme.backgroundDark
 import kotlinx.serialization.Serializable
 
@@ -47,8 +55,36 @@ import kotlinx.serialization.Serializable
 object NavOrderConfirmScreen
 
 @Composable
-fun OrderConfirmScreen( navController: NavController){LocalContext.current
+fun OrderConfirmScreen( 
+    navController: NavController,
+    orderViewModel: OrderViewModel = viewModel()
+) {
     val localContext = LocalContext.current
+    val orderCreationState by orderViewModel.orderCreationState.collectAsState()
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    
+    // Handle order creation state changes
+    LaunchedEffect(orderCreationState) {
+        val currentState = orderCreationState
+        when (currentState) {
+            is OrderCreationState.Success -> {
+                Toast.makeText(localContext, "Order Placed Successfully!", Toast.LENGTH_SHORT).show()
+                orderViewModel.resetOrderCreationState()
+                navController.navigate(NavMainScreen) {
+                    navOptions {
+                        popUpTo(NavMainScreen) {
+                            inclusive = false
+                        }
+                    }
+                }
+            }
+            is OrderCreationState.Error -> {
+                Toast.makeText(localContext, "Error: ${currentState.message}", Toast.LENGTH_LONG).show()
+                orderViewModel.resetOrderCreationState()
+            }
+            else -> {}
+        }
+    }
     Column {
         Row {
             Card(
@@ -147,19 +183,33 @@ fun OrderConfirmScreen( navController: NavController){LocalContext.current
                         }
 
                         Spacer(modifier = Modifier.height(30.dp))
-                        Button(onClick = {
-                            Toast.makeText(localContext, "Order Placed", Toast.LENGTH_SHORT).show()
-                            navController.navigate(NavMainScreen){
-                                navOptions {
-                                    popUpTo(NavMainScreen){
-                                        inclusive = false
-                                    }
+                        Button(
+                            onClick = {
+                                if (currentUserId.isNotEmpty()) {
+                                    // TODO: Replace hardcoded values with actual data passed from previous screens
+                                    orderViewModel.createOrder(
+                                        userId = currentUserId,
+                                        restaurantId = "restaurant_001", // TODO: Pass from previous screen
+                                        restaurantName = "Dumpling House",
+                                        itemName = "Special Dumplings", // TODO: Pass from previous screen
+                                        itemDescription = "Delicious leftover dumplings", // TODO: Pass from previous screen
+                                        price = "$5",
+                                        pickupTime = "3 PM - 5 PM", // TODO: Pass from previous screen
+                                        restaurantAddress = "123 Main St, Cityville" // TODO: Pass from previous screen
+                                    )
+                                } else {
+                                    Toast.makeText(localContext, "Please log in to place order", Toast.LENGTH_SHORT).show()
                                 }
-                            }
-                        },
-                            modifier = Modifier.fillMaxWidth()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = orderCreationState !is OrderCreationState.Loading
                         ) {
-                            Text(text = "Place Order")
+                            val buttonState = orderCreationState
+                            if (buttonState is OrderCreationState.Loading) {
+                                CircularProgressIndicator(modifier = Modifier.padding(4.dp))
+                            } else {
+                                Text(text = "Place Order")
+                            }
                         }
                     }
 

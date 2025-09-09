@@ -85,6 +85,7 @@ import com.example.plateful.presentation.itemdetailscreen.NavAddingLeftovers
 import com.example.plateful.presentation.login.NavPersonalDetails
 import com.example.plateful.presentation.login.mainlogin.NavSignInUI
 import com.example.plateful.presentation.login.SignInDataViewModel
+import com.example.plateful.presentation.orders.NavOrdersScreen
 import com.example.plateful.presentation.restaurantonboarding.NavListingRestaurant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ data class ProfileItem(val vectorImage: ImageVector, val label: String, val onCl
 
 
 val myOrderList = listOf(
-    ProfileItem(vectorImage = Icons.Default.Fastfood, label = "Your Orders", onClick = {/*TODO*/}),
+    ProfileItem(vectorImage = Icons.Default.Fastfood, label = "Your Orders", onClick = { it.navigate(NavOrdersScreen) }),
     //address of person
     ProfileItem(
         vectorImage = Icons.Default.House,

@@ -61,6 +61,8 @@ import com.example.plateful.presentation.login.mainlogin.OTPVerificationUI
 import com.example.plateful.presentation.login.mainlogin.SignInUI
 import com.example.plateful.presentation.onboardingProcess.NavOnboarding
 import com.example.plateful.presentation.onboardingProcess.Onboarding
+import com.example.plateful.presentation.orders.NavOrdersScreen
+import com.example.plateful.presentation.orders.OrdersScreen
 import com.example.plateful.presentation.postScreen.NavPostScreen
 import com.example.plateful.presentation.postScreen.PostScreen
 import com.example.plateful.presentation.restaurantonboarding.ListingRestaurantScreen
@@ -294,10 +296,10 @@ class MainActivity : ComponentActivity() {
                         val userId = backStackEntry.arguments?.getString("userId") ?: ""
                         FeedbackScreen(userId = userId)
                     }
-
-
-
-
+                    
+                    composable<NavOrdersScreen> {
+                        OrdersScreen(navController = navController)
+                    }
 
                 }
             }

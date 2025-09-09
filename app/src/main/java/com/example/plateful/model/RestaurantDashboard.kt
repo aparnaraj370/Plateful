@@ -11,12 +11,6 @@ data class RestaurantOrderStats(
     val status : OrderStatus
 )
 
-enum class OrderStatus{
-    COMPLETED,
-    PENDING,
-    CANCELLED
-}
-
 data class OrderSummary(
     val completed: Int = 0,
     val pending: Int = 0,
