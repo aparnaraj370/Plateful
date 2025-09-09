@@ -34,25 +34,29 @@ class OrderRepository {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d("OrderRepository", "Fetching orders for user: $userId")
+
                 val result = db.collection(ordersCollection)
                     .whereEqualTo("userId", userId)
-                    .orderBy("orderDate", Query.Direction.DESCENDING)
                     .get()
                     .await()
-                
+
+                Log.d("OrderRepository", "Query executed - found ${result.documents.size} documents")
+
                 val orders = result.documents.mapNotNull { document ->
                     try {
-                        document.toObject(Order::class.java)
+                        val order = document.toObject(Order::class.java)
+                        order
                     } catch (e: Exception) {
-                        Log.e("OrderRepository", "Error parsing order document: ${document.id}", e)
+                        Log.e("OrderRepository", "Error parsing document ${document.id}", e)
                         null
                     }
-                }
-                Log.d("OrderRepository", "Fetched ${orders.size} orders for user: $userId")
-                orders
+                }.sortedByDescending { it.orderDate.seconds }
+
+                Log.d("OrderRepository", "Successfully processed ${orders.size} orders")
+                return@withContext orders
             } catch (e: Exception) {
-                Log.e("OrderRepository", "Error getting user orders", e)
-                emptyList()
+                Log.e("OrderRepository", "Error in getUserOrders", e)
+                return@withContext emptyList()
             }
         }
     }

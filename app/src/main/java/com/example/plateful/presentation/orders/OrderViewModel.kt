@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.plateful.domain.repository.OrderRepository
 import com.example.plateful.model.Order
 import com.example.plateful.model.OrderStatus
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,6 +76,7 @@ class OrderViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 Log.d("OrderViewModel", "Loading orders for user: $userId")
+                
                 val userOrders = orderRepository.getUserOrders(userId)
                 _orders.value = userOrders
                 Log.d("OrderViewModel", "Loaded ${userOrders.size} orders")
