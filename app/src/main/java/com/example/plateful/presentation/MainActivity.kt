@@ -83,6 +83,10 @@ import com.example.plateful.presentation.searchFilter.NavSearchScreen
 import com.example.plateful.presentation.searchFilter.SearchScreen
 import com.example.plateful.presentation.restaurant.NavRestaurantProfileScreen
 import com.example.plateful.presentation.restaurant.RestaurantProfileScreen
+import com.example.plateful.presentation.reviews.AddReviewScreen
+import com.example.plateful.presentation.reviews.NavAddReviewScreen
+import com.example.plateful.presentation.reviews.NavReviewsListScreen
+import com.example.plateful.presentation.reviews.ReviewsListScreen
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import android.util.Log
@@ -338,6 +342,28 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             restaurantName = args.restaurantName,
                             restaurantId = args.restaurantId
+                        )
+                    }
+                    
+                    composable<NavReviewsListScreen> { backStackEntry ->
+                        val args = backStackEntry.toRoute<NavReviewsListScreen>()
+                        ReviewsListScreen(
+                            restaurantId = args.restaurantId,
+                            restaurantName = args.restaurantName,
+                            menuItemId = args.menuItemId,
+                            menuItemName = args.menuItemName,
+                            navController = navController
+                        )
+                    }
+                    
+                    composable<NavAddReviewScreen> { backStackEntry ->
+                        val args = backStackEntry.toRoute<NavAddReviewScreen>()
+                        AddReviewScreen(
+                            restaurantId = args.restaurantId,
+                            restaurantName = args.restaurantName,
+                            menuItemId = args.menuItemId,
+                            menuItemName = args.menuItemName,
+                            navController = navController
                         )
                     }
 

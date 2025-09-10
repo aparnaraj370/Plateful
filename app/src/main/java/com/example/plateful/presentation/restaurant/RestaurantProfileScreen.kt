@@ -27,6 +27,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.serialization.Serializable
 import com.example.plateful.R
+import com.example.plateful.presentation.reviews.NavReviewsListScreen
+import com.example.plateful.presentation.reviews.components.RatingStars
+import com.example.plateful.presentation.reviews.components.ReviewSummaryCard
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.plateful.presentation.reviews.ReviewViewModel
 import com.example.plateful.presentation.login.Screens.Card
 import com.example.plateful.presentation.login.Screens.TopOffers
 import com.example.plateful.presentation.itemdetailscreen.NavItemDetailScreen
@@ -65,7 +71,8 @@ data class Review(
 fun RestaurantProfileScreen(
     navController: NavController,
     restaurantName: String,
-    restaurantId: String
+    restaurantId: String,
+    reviewViewModel: ReviewViewModel = viewModel()
 ) {
     // Mock data - in real app this would come from API
     val restaurantInfo = RestaurantInfo(
@@ -130,26 +137,12 @@ fun RestaurantProfileScreen(
         )
     )
 
-    val mockReviews = listOf(
-        Review(
-            userName = "Rajesh Kumar",
-            rating = 5f,
-            comment = "Amazing food quality! Fresh and tasty. Highly recommended.",
-            date = "2 days ago"
-        ),
-        Review(
-            userName = "Priya Sharma",
-            rating = 4f,
-            comment = "Good taste but delivery was a bit delayed. Overall satisfied.",
-            date = "1 week ago"
-        ),
-        Review(
-            userName = "Amit Singh",
-            rating = 5f,
-            comment = "Best ${restaurantName.split(" ").first().lowercase()} in the area! Will order again.",
-            date = "2 weeks ago"
-        )
-    )
+    // Load reviews when screen opens
+    val reviewState by reviewViewModel.reviewState.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(restaurantId) {
+        reviewViewModel.loadRestaurantReviews(restaurantId)
+    }
 
     var selectedTab by remember { mutableStateOf("Menu") }
     val tabs = listOf("Menu", "Reviews", "Info")
@@ -161,6 +154,7 @@ fun RestaurantProfileScreen(
         item {
             RestaurantHeader(
                 restaurantInfo = restaurantInfo,
+                reviewState = reviewState,
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -207,8 +201,13 @@ fun RestaurantProfileScreen(
                 }
             }
             "Reviews" -> {
-                items(mockReviews) { review ->
-                    ReviewItem(review = review)
+                item {
+                    ReviewsSection(
+                        navController = navController,
+                        restaurantId = restaurantId,
+                        restaurantName = restaurantName,
+                        reviewState = reviewState
+                    )
                 }
             }
             "Info" -> {
@@ -224,6 +223,7 @@ fun RestaurantProfileScreen(
 @Composable
 fun RestaurantHeader(
     restaurantInfo: RestaurantInfo,
+    reviewState: com.example.plateful.model.ReviewState,
     onBackClick: () -> Unit
 ) {
     Box {
@@ -297,7 +297,7 @@ fun RestaurantHeader(
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = "${restaurantInfo.rating} (${restaurantInfo.totalReviews}+ reviews)",
+                    text = "${reviewState.reviewSummary.averageRating} (${reviewState.reviewSummary.totalReviews} reviews)",
                     color = Color.White,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -570,6 +570,146 @@ fun InfoItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 20.sp
             )
+        }
+    }
+}
+
+@Composable
+fun ReviewsSection(
+    navController: NavController,
+    restaurantId: String,
+    restaurantName: String,
+    reviewState: com.example.plateful.model.ReviewState
+) {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        // Review Summary
+        if (reviewState.reviewSummary.totalReviews > 0) {
+            ReviewSummaryCard(
+                reviewSummary = reviewState.reviewSummary,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+        
+        // Reviews Header with "See All" button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Recent Reviews",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            
+            if (reviewState.reviewSummary.totalReviews > 3) {
+                TextButton(
+                    onClick = {
+                        navController.navigate(
+                            NavReviewsListScreen(
+                                restaurantId = restaurantId,
+                                restaurantName = restaurantName
+                            )
+                        )
+                    }
+                ) {
+                    Text("See All")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Show recent reviews or empty state
+        when {
+            reviewState.isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            
+            reviewState.reviewSummary.recentReviews.isEmpty() -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.RateReview,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "No reviews yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Text(
+                            text = "Be the first to review this restaurant!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+            
+            else -> {
+                // Show first 3 recent reviews
+                reviewState.reviewSummary.recentReviews.take(3).forEach { review ->
+                    com.example.plateful.presentation.reviews.components.ReviewCard(
+                        review = review,
+                        onHelpfulClick = { /* Handle in full reviews screen */ },
+                        onReportClick = { /* Handle in full reviews screen */ },
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                
+                // "View All Reviews" button if there are more
+                if (reviewState.reviewSummary.totalReviews > 3) {
+                    Button(
+                        onClick = {
+                            navController.navigate(
+                                NavReviewsListScreen(
+                                    restaurantId = restaurantId,
+                                    restaurantName = restaurantName
+                                )
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("View All ${reviewState.reviewSummary.totalReviews} Reviews")
+                    }
+                }
+            }
         }
     }
 }

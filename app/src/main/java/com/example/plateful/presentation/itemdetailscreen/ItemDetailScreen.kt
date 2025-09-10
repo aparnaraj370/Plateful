@@ -33,6 +33,8 @@ import com.maxkeppeler.sheets.clock.models.ClockSelection
 import com.example.plateful.R
 import com.example.plateful.presentation.login.Screens.NavMainScreen
 import com.example.plateful.ui.theme.backgroundDark
+import com.example.plateful.presentation.reviews.NavReviewsListScreen
+import com.example.plateful.presentation.reviews.components.RatingStars
 import kotlinx.serialization.Serializable
 
 
@@ -290,6 +292,25 @@ fun ItemDetailScreen(
                     
                     Spacer(modifier = Modifier.height(20.dp))
                     
+                    // Reviews Preview Section
+                    ReviewsPreview(
+                        itemName = itemName,
+                        restaurantName = restaurantName,
+                        rating = rating,
+                        onViewAllReviews = {
+                            navController.navigate(
+                                NavReviewsListScreen(
+                                    restaurantId = "restaurant_${restaurantName.hashCode()}",
+                                    restaurantName = restaurantName,
+                                    menuItemId = "item_${itemName.hashCode()}",
+                                    menuItemName = itemName
+                                )
+                            )
+                        }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(20.dp))
+                    
                     // Quantity Selector
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -458,4 +479,90 @@ private fun formatTime(hours: Int, minutes: Int): String{
     var formattedHours = String.format("%02d", hours)
     var formattedMinutes = String.format("%02d", minutes)
     return "$formattedHours:$formattedMinutes"
+}
+
+@Composable
+fun ReviewsPreview(
+    itemName: String,
+    restaurantName: String,
+    rating: Float,
+    onViewAllReviews: () -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Reviews",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            TextButton(onClick = onViewAllReviews) {
+                Text("View All")
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Rating summary
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RatingStars(
+                rating = rating,
+                starSize = 18
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Based on customer reviews for this item",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Sample review preview
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Sample Customer",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    RatingStars(
+                        rating = rating,
+                        starSize = 12
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Great taste and quality! The $itemName from $restaurantName exceeded my expectations.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
