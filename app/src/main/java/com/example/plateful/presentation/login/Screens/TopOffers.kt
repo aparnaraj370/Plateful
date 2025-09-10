@@ -360,7 +360,8 @@ fun CardsSection() {
 @Composable
 fun CardsSection(
     offers: List<Card>,
-    onClick: ((Card) -> Unit)? = null
+    onClick: ((Card) -> Unit)? = null,
+    onRestaurantClick: ((String) -> Unit)? = null
 ) {
     if (offers.isEmpty()) {
         Box(
@@ -376,7 +377,8 @@ fun CardsSection(
             items(offers.size) { index ->
                 TopOffers(
                     card = offers[index],
-                    onClick = { card -> onClick?.invoke(card) }
+                    onClick = { card -> onClick?.invoke(card) },
+                    onRestaurantClick = onRestaurantClick
                 )
             }
         }
@@ -386,7 +388,8 @@ fun CardsSection(
 @Composable
 fun TopOffers(
     card: Card,
-    onClick: ((Card) -> Unit)? = null
+    onClick: ((Card) -> Unit)? = null,
+    onRestaurantClick: ((String) -> Unit)? = null
 ) {
     val lastItemPaddingEnd = 0.dp
     // This padding decision will be handled in the row for the last card
@@ -407,7 +410,10 @@ fun TopOffers(
                 text = card.RestroName,
                 color = Color.White,
                 fontSize = 17.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { 
+                    onRestaurantClick?.invoke(card.RestroName) 
+                }
             )
             Text(
                 text = card.Offer,

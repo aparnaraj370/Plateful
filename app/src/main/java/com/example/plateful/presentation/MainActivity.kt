@@ -72,7 +72,8 @@ import com.example.plateful.presentation.restaurantonboarding.ListingViewModel
 import com.example.plateful.presentation.restaurantonboarding.ListingViewModelFactory
 import com.example.plateful.presentation.restaurantonboarding.NavListingRestaurant
 import com.example.plateful.ui.theme.AppTheme
-//import com.example.plateful.presentation.login.Screens.ShoppingCartScreen
+import com.example.plateful.presentation.cart.ShoppingCartScreen
+import com.example.plateful.presentation.FeedbackScreen
 import com.example.plateful.presentation.restaurantDashboard.NavRestaurantDashboardScreen
 import com.example.plateful.presentation.restaurantDashboard.RestaurantDashboardScreen
 import com.example.plateful.presentation.restaurantDashboard.RestaurantViewModel
@@ -80,6 +81,8 @@ import com.example.plateful.presentation.searchFilter.FilterSortBottomSheetUI
 import com.example.plateful.presentation.searchFilter.FilterSearchViewModel
 import com.example.plateful.presentation.searchFilter.NavSearchScreen
 import com.example.plateful.presentation.searchFilter.SearchScreen
+import com.example.plateful.presentation.restaurant.NavRestaurantProfileScreen
+import com.example.plateful.presentation.restaurant.RestaurantProfileScreen
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import android.util.Log
@@ -272,11 +275,6 @@ class MainActivity : ComponentActivity() {
                         PostScreen {
                             navController.popBackStack()
                         }
-
-
-                        composable<NavOnboarding> {
-                            Onboarding(navController = navController)
-                        }
                     }
                     composable<NavOnboarding>{
                         Onboarding(navController = navController)
@@ -304,8 +302,8 @@ class MainActivity : ComponentActivity() {
                         enterTransition = { slideHorizontallyAnimation() }
                     ) {
                         ShoppingCartScreen(
-                            onBackClick = { navController.popBackStack() },
-                            padding = PaddingValues()
+                            navController = navController,
+                            onBackClick = { navController.popBackStack() }
                         )
                     }
                     composable("address_screen") {
@@ -333,6 +331,14 @@ class MainActivity : ComponentActivity() {
                     
                     composable<NavOrdersScreen> {
                         OrdersScreen(navController = navController)
+                    }
+                    composable<NavRestaurantProfileScreen> { backStackEntry ->
+                        val args = backStackEntry.toRoute<NavRestaurantProfileScreen>()
+                        RestaurantProfileScreen(
+                            navController = navController,
+                            restaurantName = args.restaurantName,
+                            restaurantId = args.restaurantId
+                        )
                     }
 
                 }

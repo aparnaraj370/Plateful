@@ -79,6 +79,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.plateful.model.TopOffersViewModel
 import com.example.plateful.presentation.itemdetailscreen.NavItemDetailScreen
+import com.example.plateful.presentation.restaurant.NavRestaurantProfileScreen
 import com.example.plateful.presentation.login.BottomNavigation.BottomNavigationItem
 import com.example.plateful.presentation.profilescreens.ProfileScreen
 import com.example.plateful.presentation.profilescreens.TopAppBarProfileScreen
@@ -350,6 +351,14 @@ fun MainScreen(
                                                     location = card.location,
                                                     pickupTime = card.pickupTime,
                                                     isVegan = card.isVegan
+                                                )
+                                            )
+                                        },
+                                        onRestaurantClick = { restaurantName ->
+                                            navController.navigate(
+                                                NavRestaurantProfileScreen(
+                                                    restaurantName = restaurantName,
+                                                    restaurantId = restaurantName.replace(" ", "_").lowercase()
                                                 )
                                             )
                                         }
