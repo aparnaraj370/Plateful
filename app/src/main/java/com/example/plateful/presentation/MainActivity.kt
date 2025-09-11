@@ -13,7 +13,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -87,6 +87,13 @@ import com.example.plateful.presentation.reviews.AddReviewScreen
 import com.example.plateful.presentation.reviews.NavAddReviewScreen
 import com.example.plateful.presentation.reviews.NavReviewsListScreen
 import com.example.plateful.presentation.reviews.ReviewsListScreen
+import com.example.plateful.presentation.owner.NavOwnerDashboard
+import com.example.plateful.presentation.owner.OwnerDashboardScreen
+import com.example.plateful.presentation.owner.NavAddFoodPack
+import com.example.plateful.presentation.owner.AddFoodPackScreen
+import com.example.plateful.domain.model.UserType
+import com.example.plateful.domain.services.SessionManager
+import com.example.plateful.repository.UserDataRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import android.util.Log
@@ -123,6 +130,10 @@ class MainActivity : ComponentActivity() {
         val accountService: AccountService = AccountServiceImpl()
         val alreadyLoggedIn = FirebaseAuth.getInstance().currentUser != null
         val restaurantListingViewModel: ListingViewModel = ListingViewModelFactory().create(ListingViewModel::class.java)
+        
+        // Check if user is restaurant owner and route appropriately
+        val userRepository = UserDataRepository()
+        val sessionManager = SessionManager(this, userRepository)
 
         enableEdgeToEdge()
         setContent {
@@ -131,13 +142,44 @@ class MainActivity : ComponentActivity() {
                 val viewModel: SignInDataViewModel = viewModel()
                 val mainSignInViewModel: MainSignInViewModel =
                     viewModel(factory = MainSignInViewModelFactory(auth, accountService))
-                if (alreadyLoggedIn)
-                    viewModel.getUserData(FirebaseAuth.getInstance().currentUser!!.uid)
+                
+                // Determine start destination
+                var startDestination by remember { mutableStateOf<Any>(NavWelcomeScreen) }
+                
+                // Load start destination based on user state
+                LaunchedEffect(alreadyLoggedIn) {
+                    if (alreadyLoggedIn) {
+                        val currentUser = FirebaseAuth.getInstance().currentUser
+                        if (currentUser != null) {
+                            try {
+                                // Get user data to check type
+                                val userData = userRepository.getUserData(currentUser.uid)
+                                startDestination = when (userData?.userType) {
+                                    UserType.RESTAURANT_OWNER -> {
+                                        // Double-check restaurant access
+                                        if (!userData.restaurantId.isNullOrEmpty()) {
+                                            NavOwnerDashboard
+                                        } else {
+                                            NavMainScreen
+                                        }
+                                    }
+                                    else -> NavMainScreen
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MainActivity", "Error loading user data: ${e.message}")
+                                startDestination = NavMainScreen
+                            }
+                        } else {
+                            startDestination = NavMainScreen
+                        }
+                        // Load user data for the view model
+                        viewModel.getUserData(currentUser!!.uid)
+                    }
+                }
+                
                 NavHost(
                     navController = navController,
-                    startDestination =
-                    if (alreadyLoggedIn)
-                        NavMainScreen  else NavWelcomeScreen
+                    startDestination = startDestination
                 ) {
                     composable<NavWelcomeScreen>(
                         enterTransition = {
@@ -365,6 +407,15 @@ class MainActivity : ComponentActivity() {
                             menuItemName = args.menuItemName,
                             navController = navController
                         )
+                    }
+                    
+                    // Owner Dashboard Routes
+                    composable<NavOwnerDashboard> {
+                        OwnerDashboardScreen(navController = navController)
+                    }
+                    
+                    composable<NavAddFoodPack> {
+                        AddFoodPackScreen(navController = navController)
                     }
 
                 }

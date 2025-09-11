@@ -199,7 +199,7 @@ class SessionManager(
             !state.isAuthenticated -> "app_entry_selection"
             state.userEntity == null -> "personal_details"
             !state.userEntity.isProfileComplete -> "personal_details"
-            state.userRole?.userType == UserType.RESTAURANT_OWNER -> "restaurant_dashboard"
+            state.userRole?.userType == UserType.RESTAURANT_OWNER -> "NavOwnerDashboard"
             state.userRole?.entryType == UserEntryType.RESTAURANT_ENTRY -> "restaurant_onboarding"
             else -> "main_screen"
         }

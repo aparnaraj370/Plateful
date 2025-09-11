@@ -7,6 +7,7 @@ import com.example.plateful.presentation.restaurantonboarding.RestaurantTimeSlot
 
 data class RestaurantEntity(
     val restaurantId: String = "",
+    val ownerId: String = "", // Foreign key linking to users table
     val restaurantName: String = "",
     val restaurantAddress: AddressEntity = AddressEntity(),
     val phoneNumber: String = "",
@@ -20,5 +21,7 @@ data class RestaurantEntity(
     val selectedRestaurantType: List<RestaurantType> = emptyList(),
     val workingDaysList: List<DayOfWeek> = emptyList(),
     val timeSlots: List<RestaurantTimeSlot> = listOf(RestaurantTimeSlot()),
-    val restaurantImages: List<String> = emptyList()
+    val restaurantImages: List<String> = emptyList(),
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
 )

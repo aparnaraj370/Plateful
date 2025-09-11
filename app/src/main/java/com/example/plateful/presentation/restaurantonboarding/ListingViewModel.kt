@@ -13,6 +13,7 @@ import com.example.plateful.model.RestaurantEntity
 import com.example.plateful.model.RestaurantType
 import com.example.plateful.presentation.login.Screens.NavMainScreen
 import com.example.plateful.presentation.login.Screens.NavRoleSelectScreen
+import com.example.plateful.presentation.owner.NavOwnerDashboard
 import com.example.plateful.presentation.login.emailCheck
 import com.example.plateful.presentation.login.phoneNumberCheck
 import kotlinx.coroutines.launch
@@ -32,7 +33,8 @@ class ListingViewModel : ViewModel() {
             if (uiState.value == ListingUIState.RESTAURANT_SUCCESS_SCREEN)
             //navController.navigateUp()
                 if (entryPoint == "fromRegistration") {
-                    navController.navigate(NavMainScreen) {
+                    // Navigate to Owner Dashboard since user is now a restaurant owner
+                    navController.navigate(NavOwnerDashboard) {
                         popUpTo(NavRoleSelectScreen) { inclusive = true }
                     }
                 } else {
