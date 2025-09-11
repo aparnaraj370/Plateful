@@ -1,3 +1,5 @@
+package com.example.plateful.presentation.orderingPickup
+
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut

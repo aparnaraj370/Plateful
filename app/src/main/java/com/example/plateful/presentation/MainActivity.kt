@@ -1,8 +1,8 @@
 package com.example.plateful.presentation
 
 
-import NavOrderingPickup
-import OrderingPickup
+import com.example.plateful.presentation.orderingPickup.NavOrderingPickup
+import com.example.plateful.presentation.orderingPickup.OrderingPickup
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity

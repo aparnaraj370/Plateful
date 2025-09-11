@@ -1,7 +1,7 @@
 package com.example.plateful.presentation.profilescreens
 
 
-import NavOrderingPickup
+import com.example.plateful.presentation.orderingPickup.NavOrderingPickup
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing

@@ -83,10 +83,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.ui.text.google.fonts)
-    implementation(libs.googleid)
     implementation(libs.androidx.material3.android)
     implementation(libs.firebase.storage.ktx)
-    implementation(libs.androidx.benchmark.traceprocessor.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -147,8 +145,7 @@ dependencies {
     //Lottie
     implementation( libs.lottie.compose)
 
-    //navigation
-    implementation(libs.androidx.navigation.compose)
+    //navigation - already included above, removing duplicate
     implementation(libs.kotlinx.serialization.json)
 
     //pager

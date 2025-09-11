@@ -228,6 +228,10 @@ val OrangeEnd = Color(0xFFFDA35F)
 val GreenStart = Color(0xFF11B114)
 val GreenEnd = Color(0xFF52DB59)
 
+// Custom colors used by legacy screens
+val Primary = primaryLight
+val Secondary = secondaryLight
+
 
 
 

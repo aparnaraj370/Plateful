@@ -1,4 +1,4 @@
-package di
+package com.example.plateful.di
 
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object FirebaseModule {
+object   FirebaseModule {
 
     @Provides
     @Singleton

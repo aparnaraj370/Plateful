@@ -1,5 +1,8 @@
 package com.example.plateful.model
 
+import com.example.plateful.domain.model.UserType
+import com.example.plateful.domain.model.UserEntryType
+
 data class UserEntity(
     var uid: String = "",
     var email: String = "",
@@ -15,5 +18,10 @@ data class UserEntity(
     var city: String = "",
     var state: String = "",
     var pincode: String = "",
-    var locality: String = ""
-    )
+    var locality: String = "",
+    var userType: UserType = UserType.CUSTOMER,
+    var entryType: UserEntryType = UserEntryType.CUSTOMER_ENTRY,
+    var restaurantId: String = "",
+    var createdAt: Long = 0L,
+    var updatedAt: Long = 0L
+)
