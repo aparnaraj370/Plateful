@@ -1,5 +1,6 @@
 package com.example.plateful.presentation.vendor
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -7,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.example.plateful.domain.repository.FoodPackRepository
 import com.example.plateful.domain.services.UserRoleService
 import com.example.plateful.domain.services.UserRoleServiceImpl
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.Date
 
 data class FoodPackManagementUiState(
@@ -32,6 +35,7 @@ class FoodPackManagementViewModel : ViewModel() {
     private val repository = FoodPackRepository()
     private val userRoleService = UserRoleServiceImpl()
     private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
     
     private val _uiState = MutableStateFlow(FoodPackManagementUiState())
     val uiState: StateFlow<FoodPackManagementUiState> = _uiState.asStateFlow()
@@ -108,18 +112,37 @@ class FoodPackManagementViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val currentUserId = auth.currentUser?.uid ?: return@launch
-                val restaurantId = userRoleService.getRestaurantIdForOwner(currentUserId)
+                Log.d("FoodPackViewModel", "Starting food pack creation")
+                val currentUserId = auth.currentUser?.uid
+                Log.d("FoodPackViewModel", "Current user ID: $currentUserId")
                 
-                if (restaurantId == null) {
-                    onResult(false, "Restaurant not found")
+                if (currentUserId == null) {
+                    Log.e("FoodPackViewModel", "No authenticated user found")
+                    onResult(false, "User not authenticated")
                     return@launch
                 }
                 
+                Log.d("FoodPackViewModel", "Fetching restaurant ID for owner: $currentUserId")
+                val restaurantId = userRoleService.getRestaurantIdForOwner(currentUserId)
+                Log.d("FoodPackViewModel", "Restaurant ID: $restaurantId")
+                
+                if (restaurantId == null) {
+                    Log.e("FoodPackViewModel", "Restaurant not found for user: $currentUserId")
+                    onResult(false, "Restaurant not found. Please complete restaurant setup first.")
+                    return@launch
+                }
+                
+                // Fetch restaurant name
+                Log.d("FoodPackViewModel", "Fetching restaurant name for ID: $restaurantId")
+                val restaurantName = getRestaurantName(restaurantId) ?: "Unknown Restaurant"
+                Log.d("FoodPackViewModel", "Restaurant name: $restaurantName")
+                
+                Log.d("FoodPackViewModel", "Creating food pack object")
                 val expiryTime = Timestamp(Date(System.currentTimeMillis() + expiryHours * 60 * 60 * 1000))
                 
                 val foodPack = FoodPack(
                     restaurantId = restaurantId,
+                    restaurantName = restaurantName,
                     vendorId = currentUserId,
                     name = name,
                     description = description,
@@ -135,15 +158,22 @@ class FoodPackManagementViewModel : ViewModel() {
                     status = FoodPackStatus.AVAILABLE
                 )
                 
+                Log.d("FoodPackViewModel", "Food pack object: $foodPack")
+                Log.d("FoodPackViewModel", "Calling repository.createFoodPack")
                 val result = repository.createFoodPack(foodPack)
+                Log.d("FoodPackViewModel", "Repository result: $result")
+                
                 if (result != null) {
+                    Log.d("FoodPackViewModel", "Food pack created successfully, refreshing data")
                     loadVendorData() // Refresh data
                     onResult(true, "Food pack created successfully")
                 } else {
+                    Log.e("FoodPackViewModel", "Failed to create food pack - repository returned null")
                     onResult(false, "Failed to create food pack")
                 }
                 
             } catch (e: Exception) {
+                Log.e("FoodPackViewModel", "Exception during food pack creation", e)
                 onResult(false, e.message ?: "Failed to create food pack")
             }
         }
@@ -258,6 +288,20 @@ class FoodPackManagementViewModel : ViewModel() {
             it.status == FoodPackStatus.AVAILABLE && 
             it.quantity > 0 && 
             it.expiryTime.toDate().before(twoHoursFromNow)
+        }
+    }
+    
+    // Helper method to get restaurant name
+    private suspend fun getRestaurantName(restaurantId: String): String? {
+        return try {
+            val document = firestore.collection("restaurants")
+                .document(restaurantId)
+                .get()
+                .await()
+            document.getString("name")
+        } catch (e: Exception) {
+            Log.e("FoodPackViewModel", "Error fetching restaurant name", e)
+            null
         }
     }
 }

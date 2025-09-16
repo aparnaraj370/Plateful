@@ -47,6 +47,38 @@ service cloud.firestore {
       );
     }
     
+    // Food packs - can be read by anyone, written by restaurant owners
+    match /foodPacks/{foodPackId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        // For new food packs being created
+        (request.resource != null && request.auth.uid == request.resource.data.vendorId) ||
+        // For existing food packs being updated
+        (resource != null && request.auth.uid == resource.data.vendorId)
+      );
+    }
+    
+    // Food pack reservations - can be read/written by customer and restaurant owner
+    match /reservations/{reservationId} {
+      allow read, write: if request.auth != null && (
+        // Customer can access their own reservations
+        (resource != null && request.auth.uid == resource.data.customerId) ||
+        (request.resource != null && request.auth.uid == request.resource.data.customerId) ||
+        // Restaurant owner can access reservations for their food packs
+        (resource != null && request.auth.uid == resource.data.vendorId) ||
+        (request.resource != null && request.auth.uid == request.resource.data.vendorId)
+      );
+    }
+    
+    // Demand predictions - can be read/written by restaurant owners
+    match /demandPredictions/{predictionId} {
+      allow read, write: if request.auth != null && (
+        // Restaurant owner can access predictions for their restaurant
+        (resource != null && request.auth.uid == resource.data.restaurantId) ||
+        (request.resource != null && request.auth.uid == request.resource.data.restaurantId)
+      );
+    }
+    
     // Allow authenticated users to read general app data (like categories, etc.)
     match /app_data/{document} {
       allow read: if request.auth != null;

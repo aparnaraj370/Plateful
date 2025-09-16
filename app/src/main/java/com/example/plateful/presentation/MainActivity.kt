@@ -154,17 +154,9 @@ class MainActivity : ComponentActivity() {
                             try {
                                 // Get user data to check type
                                 val userData = userRepository.getUserData(currentUser.uid)
-                                startDestination = when (userData?.userType) {
-                                    UserType.RESTAURANT_OWNER -> {
-                                        // Double-check restaurant access
-                                        if (!userData.restaurantId.isNullOrEmpty()) {
-                                            NavOwnerDashboard
-                                        } else {
-                                            NavMainScreen
-                                        }
-                                    }
-                                    else -> NavMainScreen
-                                }
+                                // Route all users to main screen first
+                                // Restaurant owners can access owner dashboard via navigation drawer
+                                startDestination = NavMainScreen
                             } catch (e: Exception) {
                                 Log.e("MainActivity", "Error loading user data: ${e.message}")
                                 startDestination = NavMainScreen

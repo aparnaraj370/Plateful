@@ -36,8 +36,23 @@ fun AddFoodPackScreen(
     var isVegan by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Show error message in snackbar
+    LaunchedEffect(showError) {
+        if (showError && errorMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                duration = SnackbarDuration.Long
+            )
+            showError = false
+        }
+    }
     
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { 
@@ -209,8 +224,10 @@ fun AddFoodPackScreen(
                             isLoading = false
                             if (success) {
                                 navController.popBackStack()
+                            } else {
+                                errorMessage = message
+                                showError = true
                             }
-                            // Handle error message
                         }
                     }
                 },

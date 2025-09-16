@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.example.plateful.model.*
 import com.example.plateful.presentation.vendor.FoodPackManagementViewModel
 import com.example.plateful.presentation.vendor.FoodPackManagementUiState
+import com.example.plateful.presentation.login.Screens.NavMainScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -45,6 +46,19 @@ fun OwnerDashboardScreen(
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     ) 
+                },
+                navigationIcon = {
+                    IconButton(onClick = { 
+                        navController.navigate(NavMainScreen) {
+                            popUpTo(NavOwnerDashboard) { inclusive = true }
+                        }
+                    }) {
+                        Icon(
+                            Icons.Default.Home, 
+                            contentDescription = "Go to Main",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,

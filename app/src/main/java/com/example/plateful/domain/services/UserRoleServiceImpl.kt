@@ -5,6 +5,7 @@ import com.example.plateful.domain.model.UserEntryType
 import com.example.plateful.domain.model.UserType
 import com.example.plateful.repository.UserDataRepository
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 class UserRoleServiceImpl(
     private val userRepository: UserDataRepository = UserDataRepository(FirebaseFirestore.getInstance()),
@@ -53,7 +54,7 @@ class UserRoleServiceImpl(
             val querySnapshot = firestore.collection("restaurants")
                 .whereEqualTo("ownerId", userId)
                 .get()
-                .result
+                .await()
             !querySnapshot.isEmpty
         } catch (e: Exception) {
             false
@@ -65,7 +66,7 @@ class UserRoleServiceImpl(
             val querySnapshot = firestore.collection("restaurants")
                 .whereEqualTo("ownerId", userId)
                 .get()
-                .result
+                .await()
             if (!querySnapshot.isEmpty) {
                 querySnapshot.documents.firstOrNull()?.id
             } else null

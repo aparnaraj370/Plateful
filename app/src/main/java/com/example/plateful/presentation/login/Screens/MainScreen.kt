@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
@@ -84,6 +85,18 @@ import com.example.plateful.presentation.login.BottomNavigation.BottomNavigation
 import com.example.plateful.presentation.profilescreens.ProfileScreen
 import com.example.plateful.presentation.profilescreens.TopAppBarProfileScreen
 import com.example.plateful.presentation.searchFilter.NavSearchScreen
+import com.example.plateful.presentation.owner.NavOwnerDashboard
+import com.example.plateful.domain.services.SessionManager
+import com.example.plateful.domain.services.UserRoleServiceImpl
+import com.example.plateful.domain.model.UserType
+import androidx.compose.runtime.LaunchedEffect
+import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import androidx.compose.material3.Switch
@@ -100,6 +113,35 @@ object NavMainScreen
 fun MainScreen(
     navController: NavController
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val userRoleService = remember { UserRoleServiceImpl() }
+    val auth = remember { FirebaseAuth.getInstance() }
+    var isRestaurantOwner by rememberSaveable { mutableStateOf(false) }
+    
+    // Check if user is restaurant owner using both SessionManager and UserRoleService
+    LaunchedEffect(Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // First try SessionManager (SharedPreferences)
+            val sessionUserType = sessionManager.getCurrentUserType()
+            Timber.d("UserType from SessionManager: $sessionUserType")
+            
+            // Then try UserRoleService (direct Firestore check)
+            val userRole = userRoleService.getUserRole(currentUser.uid)
+            Timber.d("UserRole from UserRoleService: $userRole")
+            
+            // Use UserRoleService as the source of truth
+            isRestaurantOwner = userRole.userType == UserType.RESTAURANT_OWNER
+            Timber.d("Final isRestaurantOwner flag: $isRestaurantOwner")
+            
+            // Update SessionManager if there's a mismatch
+            if (sessionUserType != userRole.userType && userRole.userType == UserType.RESTAURANT_OWNER) {
+                sessionManager.updateUserRole(userRole.restaurantId)
+            }
+        }
+    }
+    
     val isRequestDrawer = rememberSaveable { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -170,6 +212,21 @@ fun MainScreen(
                         icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    
+                    // Owner Dashboard - only show for restaurant owners
+                    Timber.d("outside isRestaurantOwner flag: $isRestaurantOwner")
+                    if (isRestaurantOwner) {
+                        NavigationDrawerItem(
+                            label = { Text("Owner Dashboard") },
+                            selected = false,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(NavOwnerDashboard)
+                            },
+                            icon = { Icon(Icons.Default.Business, contentDescription = null) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
                     // Spacer to visually separate bottom section
                     Spacer(modifier = Modifier.height(16.dp))

@@ -21,13 +21,19 @@ class FoodPackRepository {
     suspend fun createFoodPack(foodPack: FoodPack): String? {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("FoodPackRepository", "Starting createFoodPack")
                 val foodPackId = db.collection("foodPacks").document().id
+                Log.d("FoodPackRepository", "Generated food pack ID: $foodPackId")
+                
                 val foodPackData = foodPack.copy(
                     id = foodPackId,
                     createdAt = Timestamp.now(),
                     updatedAt = Timestamp.now()
                 )
                 
+                Log.d("FoodPackRepository", "Food pack data to save: $foodPackData")
+                
+                Log.d("FoodPackRepository", "Writing to Firestore collection 'foodPacks'")
                 db.collection("foodPacks")
                     .document(foodPackId)
                     .set(foodPackData)
