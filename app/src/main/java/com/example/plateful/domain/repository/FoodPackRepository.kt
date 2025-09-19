@@ -25,10 +25,39 @@ class FoodPackRepository {
                 val foodPackId = db.collection("foodPacks").document().id
                 Log.d("FoodPackRepository", "Generated food pack ID: $foodPackId")
                 
-                val foodPackData = foodPack.copy(
-                    id = foodPackId,
-                    createdAt = Timestamp.now(),
-                    updatedAt = Timestamp.now()
+                val foodPackData = mapOf(
+                    "id" to foodPackId,
+                    "restaurantId" to foodPack.restaurantId,
+                    "restaurantName" to foodPack.restaurantName,
+                    "vendorId" to foodPack.vendorId,
+                    "name" to foodPack.name,
+                    "description" to foodPack.description,
+                    "originalPrice" to foodPack.originalPrice,
+                    "discountedPrice" to foodPack.discountedPrice,
+                    "quantity" to foodPack.quantity,
+                    "totalQuantity" to foodPack.totalQuantity,
+                    "expiryTime" to foodPack.expiryTime,
+                    "createdAt" to Timestamp.now(),
+                    "updatedAt" to Timestamp.now(),
+                    "cuisineType" to foodPack.cuisineType.name,
+                    "isVegetarian" to foodPack.isVegetarian,
+                    "isVegan" to foodPack.isVegan,
+                    "status" to foodPack.status.name,
+                    "images" to foodPack.images,
+                    "nutritionInfo" to foodPack.nutritionInfo,
+                    "allergyInfo" to foodPack.allergyInfo,
+                    "packagingType" to foodPack.packagingType,
+                    "pickupInstructions" to foodPack.pickupInstructions,
+                    "rating" to foodPack.rating,
+                    "reviewCount" to foodPack.reviewCount,
+                    "location" to mapOf(
+                        "address" to foodPack.location.address,
+                        "city" to foodPack.location.city,
+                        "state" to foodPack.location.state,
+                        "postalCode" to foodPack.location.postalCode,
+                        "latitude" to foodPack.location.latitude,
+                        "longitude" to foodPack.location.longitude
+                    )
                 )
                 
                 Log.d("FoodPackRepository", "Food pack data to save: $foodPackData")
@@ -57,7 +86,10 @@ class FoodPackRepository {
                     .get()
                     .await()
                 
-                result.toObjects(FoodPack::class.java)
+                result.documents.mapNotNull { doc ->
+                    val data = doc.data ?: return@mapNotNull null
+                    mapDocumentToFoodPack(data)
+                }
             } catch (e: Exception) {
                 Log.e("FoodPackRepository", "Error getting vendor food packs", e)
                 emptyList()
@@ -77,7 +109,10 @@ class FoodPackRepository {
                     .get()
                     .await()
                 
-                result.toObjects(FoodPack::class.java)
+                result.documents.mapNotNull { doc ->
+                    val data = doc.data ?: return@mapNotNull null
+                    mapDocumentToFoodPack(data)
+                }
             } catch (e: Exception) {
                 Log.e("FoodPackRepository", "Error getting available food packs", e)
                 emptyList()
@@ -88,11 +123,44 @@ class FoodPackRepository {
     suspend fun updateFoodPack(foodPack: FoodPack): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val updatedFoodPack = foodPack.copy(updatedAt = Timestamp.now())
+                val foodPackData = mapOf(
+                    "id" to foodPack.id,
+                    "restaurantId" to foodPack.restaurantId,
+                    "restaurantName" to foodPack.restaurantName,
+                    "vendorId" to foodPack.vendorId,
+                    "name" to foodPack.name,
+                    "description" to foodPack.description,
+                    "originalPrice" to foodPack.originalPrice,
+                    "discountedPrice" to foodPack.discountedPrice,
+                    "quantity" to foodPack.quantity,
+                    "totalQuantity" to foodPack.totalQuantity,
+                    "expiryTime" to foodPack.expiryTime,
+                    "createdAt" to foodPack.createdAt,
+                    "updatedAt" to Timestamp.now(),
+                    "cuisineType" to foodPack.cuisineType.name,
+                    "isVegetarian" to foodPack.isVegetarian,
+                    "isVegan" to foodPack.isVegan,
+                    "status" to foodPack.status.name,
+                    "images" to foodPack.images,
+                    "nutritionInfo" to foodPack.nutritionInfo,
+                    "allergyInfo" to foodPack.allergyInfo,
+                    "packagingType" to foodPack.packagingType,
+                    "pickupInstructions" to foodPack.pickupInstructions,
+                    "rating" to foodPack.rating,
+                    "reviewCount" to foodPack.reviewCount,
+                    "location" to mapOf(
+                        "address" to foodPack.location.address,
+                        "city" to foodPack.location.city,
+                        "state" to foodPack.location.state,
+                        "postalCode" to foodPack.location.postalCode,
+                        "latitude" to foodPack.location.latitude,
+                        "longitude" to foodPack.location.longitude
+                    )
+                )
                 
                 db.collection("foodPacks")
                     .document(foodPack.id)
-                    .set(updatedFoodPack)
+                    .set(foodPackData)
                     .await()
                 
                 Log.d("FoodPackRepository", "Food pack updated successfully: ${foodPack.id}")
@@ -279,14 +347,70 @@ class FoodPackRepository {
     }
     
     // Helper Functions
+    private fun mapDocumentToFoodPack(data: Map<String, Any>): FoodPack? {
+        return try {
+            val createdAtTimestamp = data["createdAt"] as? Timestamp ?: Timestamp.now()
+            val updatedAtTimestamp = data["updatedAt"] as? Timestamp ?: Timestamp.now()
+            
+            FoodPack(
+                id = data["id"] as? String ?: return null,
+                restaurantId = data["restaurantId"] as? String ?: return null,
+                restaurantName = data["restaurantName"] as? String ?: "",
+                vendorId = data["vendorId"] as? String ?: return null,
+                name = data["name"] as? String ?: return null,
+                description = data["description"] as? String ?: "",
+                originalPrice = (data["originalPrice"] as? Number)?.toDouble() ?: 0.0,
+                discountedPrice = (data["discountedPrice"] as? Number)?.toDouble() ?: 0.0,
+                quantity = (data["quantity"] as? Long)?.toInt() ?: 0,
+                totalQuantity = (data["totalQuantity"] as? Long)?.toInt() ?: 0,
+                expiryTime = data["expiryTime"] as? Timestamp ?: return null,
+                createdAt = createdAtTimestamp,
+                updatedAt = updatedAtTimestamp,
+                cuisineType = try { CuisineType.valueOf(data["cuisineType"] as String) } catch (e: Exception) { CuisineType.VEGETARIAN },
+                isVegetarian = data["isVegetarian"] as? Boolean ?: false,
+                isVegan = data["isVegan"] as? Boolean ?: false,
+                status = try { FoodPackStatus.valueOf(data["status"] as String) } catch (e: Exception) { FoodPackStatus.AVAILABLE },
+                images = (data["images"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                nutritionInfo = data["nutritionInfo"] as? String ?: "",
+                allergyInfo = data["allergyInfo"] as? String ?: "",
+                packagingType = data["packagingType"] as? String ?: "",
+                pickupInstructions = data["pickupInstructions"] as? String ?: "",
+                rating = (data["rating"] as? Number)?.toDouble() ?: 0.0,
+                reviewCount = (data["reviewCount"] as? Long)?.toInt() ?: 0,
+                location = run {
+                    val locationData = data["location"] as? Map<String, Any> ?: return@run RestaurantLocation()
+                    RestaurantLocation(
+                        address = locationData["address"] as? String ?: "",
+                        city = locationData["city"] as? String ?: "",
+                        state = locationData["state"] as? String ?: "",
+                        postalCode = locationData["postalCode"] as? String ?: "",
+                        latitude = (locationData["latitude"] as? Number)?.toDouble() ?: 0.0,
+                        longitude = (locationData["longitude"] as? Number)?.toDouble() ?: 0.0
+                    )
+                }
+            )
+        } catch (e: Exception) {
+            Log.e("FoodPackRepository", "Error mapping document to FoodPack", e)
+            null
+        }
+    }
+    
     private suspend fun updateFoodPackQuantity(foodPackId: String, reservedQuantity: Int) {
         try {
             val foodPackRef = db.collection("foodPacks").document(foodPackId)
-            val foodPack = foodPackRef.get().await().toObject(FoodPack::class.java)
+            val doc = foodPackRef.get().await()
+            val data = doc.data
             
-            if (foodPack != null) {
-                val newQuantity = foodPack.quantity - reservedQuantity
-                val newStatus = if (newQuantity <= 0) FoodPackStatus.RESERVED else foodPack.status
+            if (data != null) {
+                val currentQuantity = (data["quantity"] as? Long)?.toInt() ?: 0
+                val currentStatus = try { 
+                    FoodPackStatus.valueOf(data["status"] as String) 
+                } catch (e: Exception) { 
+                    FoodPackStatus.AVAILABLE 
+                }
+                
+                val newQuantity = currentQuantity - reservedQuantity
+                val newStatus = if (newQuantity <= 0) FoodPackStatus.RESERVED else currentStatus
                 
                 foodPackRef.update(
                     mapOf(

@@ -132,9 +132,10 @@ class FoodPackManagementViewModel : ViewModel() {
                     return@launch
                 }
                 
-                // Fetch restaurant name
-                Log.d("FoodPackViewModel", "Fetching restaurant name for ID: $restaurantId")
-                val restaurantName = getRestaurantName(restaurantId) ?: "Unknown Restaurant"
+                // Fetch restaurant data
+                Log.d("FoodPackViewModel", "Fetching restaurant data for ID: $restaurantId")
+                val restaurantData = getRestaurantData(restaurantId)
+                val restaurantName = restaurantData?.restaurantName ?: "Unknown Restaurant"
                 Log.d("FoodPackViewModel", "Restaurant name: $restaurantName")
                 
                 Log.d("FoodPackViewModel", "Creating food pack object")
@@ -155,7 +156,15 @@ class FoodPackManagementViewModel : ViewModel() {
                     isVegetarian = isVegetarian,
                     isVegan = isVegan,
                     images = images,
-                    status = FoodPackStatus.AVAILABLE
+                    status = FoodPackStatus.AVAILABLE,
+                    location = restaurantData?.restaurantAddress?.let {
+                        RestaurantLocation(
+                            address = it.street,
+                            city = it.city,
+                            state = it.state,
+                            postalCode = it.postalCode
+                        )
+                    } ?: RestaurantLocation()
                 )
                 
                 Log.d("FoodPackViewModel", "Food pack object: $foodPack")
@@ -291,6 +300,20 @@ class FoodPackManagementViewModel : ViewModel() {
         }
     }
     
+    // Helper method to get restaurant data
+    private suspend fun getRestaurantData(restaurantId: String): com.example.plateful.model.RestaurantEntity? {
+        return try {
+            val document = firestore.collection("restaurants")
+                .document(restaurantId)
+                .get()
+                .await()
+            document.toObject(com.example.plateful.model.RestaurantEntity::class.java)
+        } catch (e: Exception) {
+            Log.e("FoodPackViewModel", "Error fetching restaurant data", e)
+            null
+        }
+    }
+    
     // Helper method to get restaurant name
     private suspend fun getRestaurantName(restaurantId: String): String? {
         return try {
@@ -298,7 +321,10 @@ class FoodPackManagementViewModel : ViewModel() {
                 .document(restaurantId)
                 .get()
                 .await()
-            document.getString("name")
+            // Try multiple field names for restaurant name
+            document.getString("restaurantName") 
+                ?: document.getString("name")
+                ?: "Unknown Restaurant"
         } catch (e: Exception) {
             Log.e("FoodPackViewModel", "Error fetching restaurant name", e)
             null

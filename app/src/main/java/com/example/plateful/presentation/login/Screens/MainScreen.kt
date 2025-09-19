@@ -96,6 +96,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -394,32 +396,46 @@ fun MainScreen(
                                     
                                     Spacer(modifier = Modifier.height(12.dp))
                                     
-                                    CardsSection(
-                                        offers = topOffersViewModel.filteredOffers,
-                                        onClick = { card ->
-                                            navController.navigate(
-                                                NavItemDetailScreen(
-                                                    itemName = card.Menu,
-                                                    restaurantName = card.RestroName,
-                                                    originalPrice = card.price,
-                                                    discountedPrice = card.discountedPrice,
-                                                    rating = card.rating,
-                                                    distance = card.distance,
-                                                    location = card.location,
-                                                    pickupTime = card.pickupTime,
-                                                    isVegan = card.isVegan
-                                                )
-                                            )
-                                        },
-                                        onRestaurantClick = { restaurantName ->
-                                            navController.navigate(
-                                                NavRestaurantProfileScreen(
-                                                    restaurantName = restaurantName,
-                                                    restaurantId = restaurantName.replace(" ", "_").lowercase()
-                                                )
-                                            )
+                                    val uiState by topOffersViewModel.uiState.collectAsState()
+                                    
+                                    // Show loading indicator if loading
+                                    if (uiState.isLoading && topOffersViewModel.filteredOffers.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
                                         }
-                                    )
+                                    } else {
+                                        CardsSection(
+                                            offers = topOffersViewModel.filteredOffers,
+                                            onClick = { card ->
+                                                navController.navigate(
+                                                    NavItemDetailScreen(
+                                                        itemName = card.Menu,
+                                                        restaurantName = card.RestroName,
+                                                        originalPrice = card.price,
+                                                        discountedPrice = card.discountedPrice,
+                                                        rating = card.rating,
+                                                        distance = card.distance,
+                                                        location = card.location,
+                                                        pickupTime = card.pickupTime,
+                                                        isVegan = card.isVegan
+                                                    )
+                                                )
+                                            },
+                                            onRestaurantClick = { restaurantName ->
+                                                navController.navigate(
+                                                    NavRestaurantProfileScreen(
+                                                        restaurantName = restaurantName,
+                                                        restaurantId = restaurantName.replace(" ", "_").lowercase()
+                                                    )
+                                                )
+                                            }
+                                        )
+                                    }
                                 }
                             }
                             1 -> {

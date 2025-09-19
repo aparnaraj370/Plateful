@@ -16,16 +16,11 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /**
  * End-to-end tests for authentication flow
- * Note: These tests use Robolectric for Android context and require Firebase emulator
+ * Note: These are unit tests that may require Firebase emulator setup
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
 class AuthenticationFlowTest {
     
     private lateinit var context: Context
