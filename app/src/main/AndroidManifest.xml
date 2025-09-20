@@ -38,6 +38,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Debug/Test Activity -->
+        <activity
+            android:name=".presentation.debug.FirestoreTestActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Plateful" />
+        
+        <!-- Add intent for launching test activity -->
+        <!--
+        To launch test activity directly, uncomment this and comment out the MainActivity intent filter above:
+        <activity
+            android:name=".presentation.debug.FirestoreTestActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Plateful" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        -->
     </application>
 
 

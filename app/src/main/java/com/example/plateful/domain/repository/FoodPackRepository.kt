@@ -21,9 +21,17 @@ class FoodPackRepository {
     suspend fun createFoodPack(foodPack: FoodPack): String? {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("FoodPackRepository", "Starting createFoodPack")
+                Log.d("FoodPackRepository", "=== CREATING FOOD PACK ===")
+                Log.d("FoodPackRepository", "🍴 Food pack name: '${foodPack.name}'")
+                Log.d("FoodPackRepository", "🏢 Restaurant: '${foodPack.restaurantName}'")
+                Log.d("FoodPackRepository", "👤 Vendor ID: '${foodPack.vendorId}'")
+                Log.d("FoodPackRepository", "💰 Price: ₹${foodPack.discountedPrice}")
+                Log.d("FoodPackRepository", "💰 Original Price: ₹${foodPack.originalPrice}")
+                Log.d("FoodPackRepository", "🔢 Quantity: ${foodPack.quantity}")
+                Log.d("FoodPackRepository", "⏰ Expiry: ${foodPack.expiryTime}")
+                
                 val foodPackId = db.collection("foodPacks").document().id
-                Log.d("FoodPackRepository", "Generated food pack ID: $foodPackId")
+                Log.d("FoodPackRepository", "🏷️ Generated ID: $foodPackId")
                 
                 val foodPackData = mapOf(
                     "id" to foodPackId,
@@ -60,18 +68,43 @@ class FoodPackRepository {
                     )
                 )
                 
-                Log.d("FoodPackRepository", "Food pack data to save: $foodPackData")
+                Log.d("FoodPackRepository", "📊 Data map created with ${foodPackData.size} fields")
+                Log.d("FoodPackRepository", "📝 Data preview: {")
+                foodPackData.forEach { (key, value) ->
+                    if (key != "location") {
+                        Log.d("FoodPackRepository", "  $key: $value")
+                    }
+                }
+                Log.d("FoodPackRepository", "}")
                 
-                Log.d("FoodPackRepository", "Writing to Firestore collection 'foodPacks'")
-                db.collection("foodPacks")
-                    .document(foodPackId)
-                    .set(foodPackData)
-                    .await()
+                Log.d("FoodPackRepository", "📡 Starting Firestore write operation...")
+                val documentRef = db.collection("foodPacks").document(foodPackId)
+                Log.d("FoodPackRepository", "📋 Document reference created: ${documentRef.path}")
                 
-                Log.d("FoodPackRepository", "Food pack created successfully: $foodPackId")
+                // Perform the actual write
+                documentRef.set(foodPackData).await()
+                Log.d("FoodPackRepository", "✅ Firestore set() operation completed successfully!")
+                
+                // Verify the write by reading back
+                Log.d("FoodPackRepository", "🔍 Verifying write by reading back...")
+                val verificationDoc = documentRef.get().await()
+                if (verificationDoc.exists()) {
+                    val retrievedData = verificationDoc.data
+                    Log.d("FoodPackRepository", "✅ Verification successful - document exists")
+                    Log.d("FoodPackRepository", "📄 Retrieved document has ${retrievedData?.size} fields")
+                    Log.d("FoodPackRepository", "🏷️ Retrieved name: ${retrievedData?.get("name")}")
+                } else {
+                    Log.w("FoodPackRepository", "⚠️ Verification failed - document does not exist after write!")
+                }
+                
+                Log.d("FoodPackRepository", "🎉 Food pack created successfully: $foodPackId")
                 foodPackId
             } catch (e: Exception) {
-                Log.e("FoodPackRepository", "Error creating food pack", e)
+                Log.e("FoodPackRepository", "❌ Error creating food pack: ${e.message}", e)
+                Log.e("FoodPackRepository", "❌ Exception class: ${e.javaClass.simpleName}")
+                if (e.cause != null) {
+                    Log.e("FoodPackRepository", "❌ Root cause: ${e.cause?.message}")
+                }
                 null
             }
         }
@@ -100,21 +133,59 @@ class FoodPackRepository {
     suspend fun getAvailableFoodPacks(): List<FoodPack> {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("FoodPackRepository", "=== FETCHING AVAILABLE FOOD PACKS ===")
+                Log.d("FoodPackRepository", "🔍 Querying foodPacks collection...")
+                Log.d("FoodPackRepository", "  - Status: ${FoodPackStatus.AVAILABLE.name}")
+                Log.d("FoodPackRepository", "  - Quantity > 0")
+                Log.d("FoodPackRepository", "  - ExpiryTime > ${Timestamp.now()}")
+                
+                // Simplified query to avoid composite index issues
                 val result = db.collection("foodPacks")
                     .whereEqualTo("status", FoodPackStatus.AVAILABLE.name)
                     .whereGreaterThan("quantity", 0)
-                    .whereGreaterThan("expiryTime", Timestamp.now())
-                    .orderBy("expiryTime", Query.Direction.ASCENDING)
-                    .orderBy("createdAt", Query.Direction.DESCENDING)
                     .get()
                     .await()
                 
-                result.documents.mapNotNull { doc ->
-                    val data = doc.data ?: return@mapNotNull null
-                    mapDocumentToFoodPack(data)
+                Log.d("FoodPackRepository", "✅ Query executed successfully")
+                Log.d("FoodPackRepository", "📄 Found ${result.documents.size} documents")
+                
+                val allFoodPacks = result.documents.mapNotNull { doc ->
+                    Log.d("FoodPackRepository", "🔄 Processing document: ${doc.id}")
+                    val data = doc.data
+                    if (data == null) {
+                        Log.w("FoodPackRepository", "⚠️ Document ${doc.id} has null data")
+                        return@mapNotNull null
+                    }
+                    
+                    try {
+                        val foodPack = mapDocumentToFoodPack(data)
+                        if (foodPack != null) {
+                            Log.d("FoodPackRepository", "✅ Successfully mapped: ${foodPack.name}")
+                        } else {
+                            Log.w("FoodPackRepository", "⚠️ Failed to map document ${doc.id}")
+                        }
+                        foodPack
+                    } catch (e: Exception) {
+                        Log.e("FoodPackRepository", "Error mapping document ${doc.id}", e)
+                        null
+                    }
                 }
+                
+                // Filter by expiry time in code (to avoid composite index requirement)
+                val currentTime = Timestamp.now()
+                val availableFoodPacks = allFoodPacks.filter { foodPack ->
+                    foodPack.expiryTime.seconds > currentTime.seconds
+                }
+                
+                Log.d("FoodPackRepository", "🎉 Final result: ${availableFoodPacks.size} available food packs")
+                availableFoodPacks.forEach { pack ->
+                    Log.d("FoodPackRepository", "  - ${pack.name} by ${pack.restaurantName} (₹${pack.discountedPrice})")
+                }
+                
+                availableFoodPacks
             } catch (e: Exception) {
-                Log.e("FoodPackRepository", "Error getting available food packs", e)
+                Log.e("FoodPackRepository", "❌ Error getting available food packs: ${e.message}", e)
+                Log.e("FoodPackRepository", "❌ Exception type: ${e.javaClass.simpleName}")
                 emptyList()
             }
         }
@@ -347,29 +418,95 @@ class FoodPackRepository {
     }
     
     // Helper Functions
-    private fun mapDocumentToFoodPack(data: Map<String, Any>): FoodPack? {
+    fun mapDocumentToFoodPack(data: Map<String, Any>): FoodPack? {
         return try {
+            Log.d("FoodPackRepository", "📝 Mapping document data to FoodPack...")
+            
+            // Log all available fields
+            Log.d("FoodPackRepository", "Available fields: ${data.keys.joinToString(", ")}")
+            
+            val id = data["id"] as? String
+            val restaurantId = data["restaurantId"] as? String
+            val restaurantName = data["restaurantName"] as? String ?: ""
+            val vendorId = data["vendorId"] as? String
+            val name = data["name"] as? String
+            val description = data["description"] as? String ?: ""
+            val originalPrice = (data["originalPrice"] as? Number)?.toDouble() ?: 0.0
+            val discountedPrice = (data["discountedPrice"] as? Number)?.toDouble() ?: 0.0
+            val quantity = (data["quantity"] as? Long)?.toInt() ?: 0
+            val totalQuantity = (data["totalQuantity"] as? Long)?.toInt() ?: 0
+            val expiryTime = data["expiryTime"] as? Timestamp
+            val statusString = data["status"] as? String ?: FoodPackStatus.AVAILABLE.name
             val createdAtTimestamp = data["createdAt"] as? Timestamp ?: Timestamp.now()
             val updatedAtTimestamp = data["updatedAt"] as? Timestamp ?: Timestamp.now()
             
-            FoodPack(
-                id = data["id"] as? String ?: return null,
-                restaurantId = data["restaurantId"] as? String ?: return null,
-                restaurantName = data["restaurantName"] as? String ?: "",
-                vendorId = data["vendorId"] as? String ?: return null,
-                name = data["name"] as? String ?: return null,
-                description = data["description"] as? String ?: "",
-                originalPrice = (data["originalPrice"] as? Number)?.toDouble() ?: 0.0,
-                discountedPrice = (data["discountedPrice"] as? Number)?.toDouble() ?: 0.0,
-                quantity = (data["quantity"] as? Long)?.toInt() ?: 0,
-                totalQuantity = (data["totalQuantity"] as? Long)?.toInt() ?: 0,
-                expiryTime = data["expiryTime"] as? Timestamp ?: return null,
+            // Log extracted values
+            Log.d("FoodPackRepository", "Extracted values:")
+            Log.d("FoodPackRepository", "  - id: '$id'")
+            Log.d("FoodPackRepository", "  - restaurantId: '$restaurantId'")
+            Log.d("FoodPackRepository", "  - vendorId: '$vendorId'")
+            Log.d("FoodPackRepository", "  - restaurantName: '$restaurantName'")
+            Log.d("FoodPackRepository", "  - name: '$name'")
+            Log.d("FoodPackRepository", "  - originalPrice: $originalPrice")
+            Log.d("FoodPackRepository", "  - discountedPrice: $discountedPrice")
+            Log.d("FoodPackRepository", "  - quantity: $quantity")
+            Log.d("FoodPackRepository", "  - status: '$statusString'")
+            Log.d("FoodPackRepository", "  - expiryTime: $expiryTime")
+            
+            // Check required fields
+            if (id == null) {
+                Log.w("FoodPackRepository", "❌ Missing required field: id")
+                return null
+            }
+            if (restaurantId == null) {
+                Log.w("FoodPackRepository", "❌ Missing required field: restaurantId")
+                return null
+            }
+            if (vendorId == null) {
+                Log.w("FoodPackRepository", "❌ Missing required field: vendorId")
+                return null
+            }
+            if (name == null) {
+                Log.w("FoodPackRepository", "❌ Missing required field: name")
+                return null
+            }
+            if (expiryTime == null) {
+                Log.w("FoodPackRepository", "❌ Missing required field: expiryTime")
+                return null
+            }
+            
+            val status = try {
+                FoodPackStatus.valueOf(statusString)
+            } catch (e: Exception) {
+                Log.w("FoodPackRepository", "Invalid status '$statusString', using AVAILABLE")
+                FoodPackStatus.AVAILABLE
+            }
+            
+            val cuisineType = try {
+                CuisineType.valueOf(data["cuisineType"] as? String ?: "VEGETARIAN")
+            } catch (e: Exception) {
+                Log.w("FoodPackRepository", "Invalid cuisineType, using VEGETARIAN")
+                CuisineType.VEGETARIAN
+            }
+            
+            val foodPack = FoodPack(
+                id = id,
+                restaurantId = restaurantId,
+                restaurantName = restaurantName,
+                vendorId = vendorId,
+                name = name,
+                description = description,
+                originalPrice = originalPrice,
+                discountedPrice = discountedPrice,
+                quantity = quantity,
+                totalQuantity = totalQuantity,
+                expiryTime = expiryTime,
                 createdAt = createdAtTimestamp,
                 updatedAt = updatedAtTimestamp,
-                cuisineType = try { CuisineType.valueOf(data["cuisineType"] as String) } catch (e: Exception) { CuisineType.VEGETARIAN },
+                cuisineType = cuisineType,
                 isVegetarian = data["isVegetarian"] as? Boolean ?: false,
                 isVegan = data["isVegan"] as? Boolean ?: false,
-                status = try { FoodPackStatus.valueOf(data["status"] as String) } catch (e: Exception) { FoodPackStatus.AVAILABLE },
+                status = status,
                 images = (data["images"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 nutritionInfo = data["nutritionInfo"] as? String ?: "",
                 allergyInfo = data["allergyInfo"] as? String ?: "",
@@ -389,8 +526,12 @@ class FoodPackRepository {
                     )
                 }
             )
+            
+            Log.d("FoodPackRepository", "✅ Successfully created FoodPack object for '${foodPack.name}'")
+            foodPack
         } catch (e: Exception) {
-            Log.e("FoodPackRepository", "Error mapping document to FoodPack", e)
+            Log.e("FoodPackRepository", "❌ Error mapping document to FoodPack: ${e.message}", e)
+            Log.e("FoodPackRepository", "❌ Document data: $data")
             null
         }
     }

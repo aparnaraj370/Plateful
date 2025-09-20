@@ -13,6 +13,7 @@ import com.example.plateful.domain.repository.FoodPackRepository
 import com.example.plateful.domain.services.UserRoleService
 import com.example.plateful.domain.services.UserRoleServiceImpl
 import com.example.plateful.model.*
+import com.example.plateful.domain.events.FoodPackEvents
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -174,6 +175,11 @@ class FoodPackManagementViewModel : ViewModel() {
                 
                 if (result != null) {
                     Log.d("FoodPackViewModel", "Food pack created successfully, refreshing data")
+                    
+                    // Emit event to notify other parts of the app
+                    FoodPackEvents.emitFoodPackCreated(result)
+                    Log.d("FoodPackViewModel", "Food pack created event emitted for ID: $result")
+                    
                     loadVendorData() // Refresh data
                     onResult(true, "Food pack created successfully")
                 } else {
@@ -196,6 +202,10 @@ class FoodPackManagementViewModel : ViewModel() {
             try {
                 val success = repository.updateFoodPack(foodPack)
                 if (success) {
+                    // Emit event to notify other parts of the app
+                    FoodPackEvents.emitFoodPackUpdated(foodPack.id)
+                    Log.d("FoodPackViewModel", "Food pack updated event emitted for ID: ${foodPack.id}")
+                    
                     loadVendorData() // Refresh data
                     selectedFoodPack = null
                     isEditMode = false
@@ -217,6 +227,10 @@ class FoodPackManagementViewModel : ViewModel() {
             try {
                 val success = repository.deleteFoodPack(foodPackId)
                 if (success) {
+                    // Emit event to notify other parts of the app
+                    FoodPackEvents.emitFoodPackDeleted(foodPackId)
+                    Log.d("FoodPackViewModel", "Food pack deleted event emitted for ID: $foodPackId")
+                    
                     loadVendorData() // Refresh data
                     onResult(true, "Food pack deleted successfully")
                 } else {

@@ -289,6 +289,7 @@ fun MainScreen(
                 val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
                 // --- ADD VIEWMODEL INJECTION ---
                 val topOffersViewModel: TopOffersViewModel = viewModel()
+                Log.d("MainScreen", "🎆 TopOffersViewModel instantiated in MainScreen")
                 Scaffold(
                     modifier = if (selectedItemIndex == 0) Modifier
                         .fillMaxSize()
@@ -311,6 +312,30 @@ fun MainScreen(
                                     }
                                 },
                                 actions = {
+                                    // Add refresh button for food packs
+                                    if (selectedItemIndex == 0) {
+                                        IconButton(onClick = { 
+                                            Log.d("MainScreen", "🔄 MANUAL REFRESH BUTTON CLICKED")
+                                            Log.d("MainScreen", "Current offers count before refresh: ${topOffersViewModel.filteredOffers.size}")
+                                            topOffersViewModel.forceRefresh() // Use force refresh to bypass cooldown
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Search, // Using Search as refresh for now
+                                                contentDescription = "Force Refresh Food Packs"
+                                            )
+                                        }
+                                        
+                                        // Debug button to check all documents
+                                        IconButton(onClick = { 
+                                            Log.d("MainScreen", "🔍 DEBUG BUTTON CLICKED")
+                                            topOffersViewModel.debugCheckAllFoodPacks()
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.FilterList,
+                                                contentDescription = "Debug Check All Food Packs"
+                                            )
+                                        }
+                                    }
                                     IconButton(onClick = { /*TODO*/ }) {
                                         Icon(
                                             imageVector = Icons.Rounded.ShoppingCart,
@@ -398,7 +423,40 @@ fun MainScreen(
                                     
                                     val uiState by topOffersViewModel.uiState.collectAsState()
                                     
-                                    // Show loading indicator if loading
+                                    // Enhanced debug logging for UI state
+                                    LaunchedEffect(uiState) {
+                                        Log.d("MainScreen", "=== MAIN SCREEN UI STATE UPDATE ===")
+                                        Log.d("MainScreen", "📊 UI State updated:")
+                                        Log.d("MainScreen", "  - Loading: ${uiState.isLoading}")
+                                        Log.d("MainScreen", "  - Error: ${uiState.error}")
+                                        Log.d("MainScreen", "  - Direct offers count: ${uiState.offers.size}")
+                                        Log.d("MainScreen", "  - Filtered offers count: ${topOffersViewModel.filteredOffers.size}")
+                                        Log.d("MainScreen", "  - All offers count: ${topOffersViewModel.allOffers.size}")
+                                        
+                                        // Log actual offers
+                                        if (uiState.offers.isNotEmpty()) {
+                                            Log.d("MainScreen", "🎆 Direct offers details:")
+                                            uiState.offers.forEachIndexed { index, offer ->
+                                                Log.d("MainScreen", "  ${index + 1}: ${offer.Menu} at ${offer.RestroName} - ${offer.Offer}")
+                                            }
+                                        }
+                                        
+                                        if (topOffersViewModel.filteredOffers.isNotEmpty()) {
+                                            Log.d("MainScreen", "🎆 Filtered offers details:")
+                                            topOffersViewModel.filteredOffers.take(3).forEachIndexed { index, offer ->
+                                                Log.d("MainScreen", "  ${index + 1}: ${offer.Menu} at ${offer.RestroName} - ${offer.Offer}")
+                                            }
+                                            if (topOffersViewModel.filteredOffers.size > 3) {
+                                                Log.d("MainScreen", "  ... and ${topOffersViewModel.filteredOffers.size - 3} more")
+                                            }
+                                        } else {
+                                            Log.w("MainScreen", "⚠️ NO FILTERED OFFERS TO DISPLAY!")
+                                        }
+                                        
+                                        Log.d("MainScreen", "=== END MAIN SCREEN UI STATE UPDATE ===")
+                                    }
+                                    
+                                    // Show loading indicator if loading and no offers available
                                     if (uiState.isLoading && topOffersViewModel.filteredOffers.isEmpty()) {
                                         Box(
                                             modifier = Modifier
@@ -406,9 +464,50 @@ fun MainScreen(
                                                 .height(120.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            CircularProgressIndicator()
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                CircularProgressIndicator()
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                    text = "Loading fresh food packs...",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    } else if (uiState.error != null && topOffersViewModel.filteredOffers.isEmpty()) {
+                                        // Show error state with retry option
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    text = "Failed to load food packs",
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = uiState.error ?: "Unknown error",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Button(
+                                                    onClick = { topOffersViewModel.refreshOffers() }
+                                                ) {
+                                                    Text("Retry")
+                                                }
+                                            }
                                         }
                                     } else {
+                                        // Show food pack cards
                                         CardsSection(
                                             offers = topOffersViewModel.filteredOffers,
                                             onClick = { card ->
@@ -435,6 +534,27 @@ fun MainScreen(
                                                 )
                                             }
                                         )
+                                        
+                                        // Show a small indicator if there was an error but we have fallback data
+                                        if (uiState.error != null && topOffersViewModel.filteredOffers.isNotEmpty()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                            ) {
+                                                Text(
+                                                    text = "⚠️ Showing cached results. Pull to refresh for latest offers.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier
+                                                        .background(
+                                                            MaterialTheme.colorScheme.surfaceVariant,
+                                                            RoundedCornerShape(8.dp)
+                                                        )
+                                                        .padding(8.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
